@@ -111,7 +111,7 @@ hr{border:0;border-top:1px solid var(--line);margin:15px 0}
           </div>
           <div class="fields">
             <div class="field"><label for="posBase">قیمت مستقل کارتخوان <span class="unit">(میلیون تومان)</span></label><input id="posBase" type="number" min="0" step="0.1" value="19"><div class="hint">مبنای مقایسه صرفه‌جویی؛ کف قیمت بسته نیست.</div></div>
-            <div class="field"><label for="posTarget">قیمت رقابتی هدف کارتخوان <span class="unit">(میلیون تومان)</span></label><input id="posTarget" type="number" min="0" step="0.1" value="15"><div class="hint">هدف مدیریت؛ تنها در صورت پوشش اقتصادی قابل عرضه است.</div></div>
+            <div class="field"><label for="posTarget">قیمت رقابتی هدف کارتخوان <span class="unit">(میلیون تومان)</span></label><input id="posTarget" type="number" min="0" step="0.1" value="15"><div class="hint">قیمت مرجع رقابتی؛ با افزایش بودجه باندلینگ، قیمت نهایی می‌تواند از این هدف هم پایین‌تر بیاید.</div></div>
             <div class="field"><label for="cashCost">بهای تمام‌شده هر کشلس <span class="unit">(میلیون تومان)</span></label><input id="cashCost" type="number" min="0" step="0.1" value="25"></div>
             <div class="field"><label for="cashPrice">قیمت فروش هر کشلس <span class="unit">(میلیون تومان)</span></label><input id="cashPrice" type="number" min="0" step="0.1" value="42"></div>
             <div class="field"><label for="cashProfit">سود ثابت موردنظر هر کش‌لس <span class="unit">(میلیون تومان)</span></label><input id="cashProfit" type="number" min="0" step="0.1" value="4"><div class="hint">فقط مبلغ ثابت را وارد کنید؛ درصد مارکاپ خودکار محاسبه می‌شود.</div></div>
@@ -161,7 +161,7 @@ hr{border:0;border-top:1px solid var(--line);margin:15px 0}
             <div><h3>بسته شتابی</h3><p>کشلس‌محور · سهم بیشتر کشلس در ترکیب سفارش</p></div>
           </div>
           <div class="fields">
-            <div class="field"><label for="speedP">تعداد کارتخوان</label><input id="speedP" type="number" min="5" step="5" value="5"></div>
+            <div class="field"><label for="speedP">تعداد کارتخوان</label><input id="speedP" type="number" min="1" step="1" value="5"></div>
             <div class="field"><label for="speedC">تعداد کشلس</label><input id="speedC" type="number" min="1" step="1" value="5"></div>
           </div>
           <div class="bundle-stats">
@@ -181,7 +181,7 @@ hr{border:0;border-top:1px solid var(--line);margin:15px 0}
             <div><h3>بسته شاپرکی</h3><p>کارتخوان‌محور · سهم بیشتر کارتخوان در ترکیب سفارش</p></div>
           </div>
           <div class="fields">
-            <div class="field"><label for="networkP">تعداد کارتخوان</label><input id="networkP" type="number" min="5" step="5" value="10"></div>
+            <div class="field"><label for="networkP">تعداد کارتخوان</label><input id="networkP" type="number" min="1" step="1" value="10"></div>
             <div class="field"><label for="networkC">تعداد کشلس</label><input id="networkC" type="number" min="1" step="1" value="2"></div>
           </div>
           <div class="bundle-stats">
@@ -209,7 +209,7 @@ hr{border:0;border-top:1px solid var(--line);margin:15px 0}
         <div class="notice warn" style="margin-bottom:15px">این ابزار یک نمونه آزمایشی است و جایگزین تأیید مالی، قرارداد، بررسی هزینه‌های واقعی، مالیات و ریسک وصول نیست. تضمین عدم زیان به کامل‌بودن داده‌ها و اجرای کنترل‌های مالی وابسته است.</div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>بسته</th><th>کارتخوان</th><th>کشلس</th><th>قیمت کارتخوان</th><th>درآمد فروش</th><th>حاشیه ناخالص کشلس</th><th>سود هدف کشلس</th><th>تخفیف کارتخوان</th><th>بودجه بازاریابی</th><th>مانده اقتصادی</th><th>وضعیت</th></tr></thead>
+            <thead><tr><th>بسته</th><th>کارتخوان</th><th>کشلس</th><th>قیمت کارتخوان</th><th>درآمد فروش</th><th>حاشیه ناخالص کشلس</th><th>سود هدف کشلس</th><th>بودجه بازاریابی</th><th>بودجه باندلینگ قابل تخصیص</th><th>تخفیف کل کارتخوان</th><th>مانده اقتصادی</th><th>وضعیت</th></tr></thead>
             <tbody id="auditRows"></tbody>
           </table>
         </div>
@@ -240,14 +240,16 @@ function calc(p,c){
   const gross=c*grossPer;
   const profit=c*x.profit;
   const marketing=p*x.marketingPerPos;
-  const available=gross-profit-marketing;
-  const requestedDiscount=Math.max(0,x.base-x.target);
+  // بودجه باندلینگ سفارش = تعداد کشلس × (قیمت فروش − بهای تمام‌شده − سود ثابت هر کشلس) − بودجه بازاریابی کل کارتخوان‌ها
+  const available=c*(x.cashPrice-x.cost-x.profit)-p*x.marketingPerPos;
+  const requestedDiscount=Math.max(0,x.base-x.target); // فقط مرجع هدف؛ سقف تخفیف نیست
   const maxDiscountPerPos=p>0?available/p:0;
   const allowed=available>=0 && p>0 && c>0 && grossPer>=0 && x.profit<=grossPer;
-  const discountPerPos=allowed?Math.min(requestedDiscount,Math.max(0,maxDiscountPerPos)):0;
-  const posPrice=x.base-discountPerPos;
+  // کل بودجه مجاز باندلینگ به کاهش قیمت کارتخوان تخصیص می‌یابد؛ با افزایش کشلس، قیمت کارتخوان نیز تغییر می‌کند.
+  const discountPerPos=allowed?Math.min(x.base,Math.max(0,maxDiscountPerPos)):0;
+  const posPrice=Math.max(0,x.base-discountPerPos);
   const totalDiscount=p*discountPerPos;
-  const residual=gross-profit-marketing-totalDiscount;
+  const residual=available-totalDiscount;
   const valid=allowed && residual>=-1e-9 && posPrice>=0;
   return {p,c,x,grossPer,gross,profit,marketing,available,requestedDiscount,maxDiscountPerPos,discountPerPos,posPrice,totalDiscount,residual,valid};
 }
@@ -269,15 +271,15 @@ function renderBundle(prefix,name){
  setText(prefix+'Total',money(r.p*r.posPrice+r.c*r.x.cashPrice));
  const status=$(prefix+'Status'),btn=$(prefix+'Select'),card=$(prefix+'Card');
  let message='';
- if(r.p<5 || r.p%5!==0) {r.valid=false;message='تعداد کارتخوان باید حداقل ۵ و مضرب ۵ باشد.';}
+ if(r.p<1) {r.valid=false;message='تعداد کارتخوان باید حداقل ۱ باشد.';}
  else if(r.c<1){r.valid=false;message='تعداد کشلس باید حداقل ۱ باشد.';}
  else if(r.grossPer<0){r.valid=false;message='قیمت فروش کشلس از بهای تمام‌شده کمتر است؛ بسته مجاز نیست.';}
  else if(r.profit>r.gross){r.valid=false;message='سود هدف کشلس از حاشیه ناخالص آن بیشتر است؛ بسته مجاز نیست.';}
  else if(r.available<0){r.valid=false;message='پس از کنارگذاری سود کش‌لس و بودجه بازاریابی کارت‌خوان‌ها، ظرفیت اقتصادی کافی وجود ندارد.';}
  else if(!r.valid){message='بسته از کنترل اقتصادی عبور نکرده است.';}
- else if(r.discountPerPos+1e-9<r.requestedDiscount){message='قیمت هدف برای این ترکیب قابل تأمین نیست؛ قیمت قابل‌عرضه به‌صورت خودکار بالاتر تعیین شده است.';}
- else {message='این ترکیب با پارامترهای فعلی از کنترل اقتصادی عبور می‌کند.';}
- status.className='notice '+(r.valid?(r.discountPerPos+1e-9<r.requestedDiscount?'warn':'good'):'bad');
+ else if(r.posPrice>r.x.target+1e-9){message='بودجه باندلینگ مثبت است، اما برای رسیدن به قیمت هدف کافی نیست؛ قیمت بر اساس کل بودجه قابل تخصیص محاسبه شده است.';}
+ else {message='قیمت کارتخوان بر اساس کل بودجه باندلینگ محاسبه شده و این ترکیب از کنترل اقتصادی عبور می‌کند.';}
+ status.className='notice '+(r.valid?(r.posPrice>r.x.target+1e-9?'warn':'good'):'bad');
  status.textContent=message;
  btn.disabled=!r.valid;
  card.classList.toggle('selected',selectedBundle===prefix);
@@ -287,7 +289,7 @@ function renderAudit(bundles){
  const x=params();
  $('auditRows').innerHTML=bundles.map(r=>{
   const status=r.valid?'<span class="tag green">مجاز</span>':'<span class="tag red">غیرمجاز</span>';
-  return `<tr><td>${r.name}</td><td>${fmt(r.p,0)}</td><td>${fmt(r.c,0)}</td><td>${money(r.posPrice)}</td><td>${money(r.p*r.posPrice+r.c*x.cashPrice)}</td><td>${money(r.gross)}</td><td>${money(r.profit)}</td><td>${money(r.totalDiscount)}</td><td>${money(r.marketing)}</td><td>${money(r.residual)}</td><td>${status}</td></tr>`;
+  return `<tr><td>${r.name}</td><td>${fmt(r.p,0)}</td><td>${fmt(r.c,0)}</td><td>${money(r.posPrice)}</td><td>${money(r.p*r.posPrice+r.c*x.cashPrice)}</td><td>${money(r.gross)}</td><td>${money(r.profit)}</td><td>${money(r.marketing)}</td><td>${money(r.available)}</td><td>${money(r.totalDiscount)}</td><td>${money(r.residual)}</td><td>${status}</td></tr>`;
  }).join('');
  setText('auditBase',money(x.base));setText('auditTarget',money(x.target));setText('auditMarketing',money(x.marketingPerPos));
 }
@@ -321,7 +323,7 @@ $('speedSelect').addEventListener('click',()=>{const r=readBundle('speed');if(r.
 $('networkSelect').addEventListener('click',()=>{const r=readBundle('network');if(r.valid){selectedBundle='network';renderAll();go('offers');}});
 renderAll();
 
-function exportExcel(){const rows=[['گزارش مدل فروش محصولات کارتخوان توسن تکنو'],['پارامتر','مقدار (میلیون تومان)'],['قیمت مستقل کارتخوان',num('posBase')],['قیمت هدف کارتخوان',num('posTarget')],['بهای تمام‌شده کشلس',num('cashCost')],['قیمت فروش کشلس',num('cashPrice')],['سود ثابت هر کشلس',num('cashProfit')],['بودجه بازاریابی هر کارتخوان',num('marketingPerPos')],[],['بسته','تعداد کارتخوان','تعداد کشلس','قیمت هر کارتخوان','قیمت هر کشلس','مبلغ کل سفارش','حاشیه ناخالص کشلس','سود هدف کشلس','تخفیف کل','بودجه بازاریابی کل','مانده اقتصادی','وضعیت']];[['speed','بسته شتابی'],['network','بسته شاپرکی']].forEach(([prefix,name])=>{const r=calc(Math.floor(num(prefix+'P')),Math.floor(num(prefix+'C')));rows.push([name,r.p,r.c,r.posPrice,r.x.cashPrice,r.p*r.posPrice+r.c*r.x.cashPrice,r.gross,r.profit,r.totalDiscount,r.marketing,r.residual,r.valid?'مجاز':'غیرمجاز'])});const csv='\ufeff'+rows.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='گزارش-مدل-فروش-توسن-تکنو.csv';a.click();URL.revokeObjectURL(url)}
+function exportExcel(){const rows=[['گزارش مدل فروش محصولات کارتخوان توسن تکنو'],['پارامتر','مقدار (میلیون تومان)'],['قیمت مستقل کارتخوان',num('posBase')],['قیمت هدف کارتخوان',num('posTarget')],['بهای تمام‌شده کشلس',num('cashCost')],['قیمت فروش کشلس',num('cashPrice')],['سود ثابت هر کشلس',num('cashProfit')],['بودجه بازاریابی هر کارتخوان',num('marketingPerPos')],[],['بسته','تعداد کارتخوان','تعداد کشلس','قیمت هر کارتخوان','قیمت هر کشلس','مبلغ کل سفارش','حاشیه ناخالص کشلس','سود هدف کشلس','بودجه بازاریابی کل','بودجه باندلینگ قابل تخصیص','تخفیف کل','مانده اقتصادی','وضعیت']];[['speed','بسته شتابی'],['network','بسته شاپرکی']].forEach(([prefix,name])=>{const r=calc(Math.floor(num(prefix+'P')),Math.floor(num(prefix+'C')));rows.push([name,r.p,r.c,r.posPrice,r.x.cashPrice,r.p*r.posPrice+r.c*r.x.cashPrice,r.gross,r.profit,r.marketing,r.available,r.totalDiscount,r.residual,r.valid?'مجاز':'غیرمجاز'])});const csv='\ufeff'+rows.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='گزارش-مدل-فروش-توسن-تکنو.csv';a.click();URL.revokeObjectURL(url)}
 document.getElementById('exportExcel').addEventListener('click',exportExcel);document.getElementById('exportPdf').addEventListener('click',()=>window.print());setTimeout(()=>document.getElementById('splash').classList.add('hide'),5000);let installPrompt;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;document.getElementById('installApp').style.display='inline-block'});document.getElementById('installApp').addEventListener('click',async()=>{if(installPrompt){installPrompt.prompt();await installPrompt.userChoice;installPrompt=null}else alert('برای نصب، فایل‌ها باید روی HTTPS یا localhost اجرا شوند.')});if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 
 </script>
