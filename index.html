@@ -128,7 +128,7 @@ hr{border:0;border-top:1px solid var(--line);margin:15px 0}
             <div class="kpi"><div class="label">حاشیه ناخالص هر کشلس</div><div class="value" id="grossMargin">۱۷</div><div class="sub">میلیون تومان</div></div>
             <div class="kpi"><div class="label">درصد سود هدف روی بهای تمام‌شده</div><div class="value" id="markup">۱۶٪</div><div class="sub">سود هدف ÷ بهای تمام‌شده</div></div>
             <div class="kpi"><div class="label">تخفیف هدف هر کارتخوان</div><div class="value" id="targetDiscount">۴</div><div class="sub">قیمت مستقل منهای قیمت هدف</div></div>
-            <div class="kpi emphasis"><div class="label">ظرفیت پس از سود هدف کش‌لس</div><div class="value" id="remainingMargin">۱۳</div><div class="sub">پیش از کسر بودجه بازاریابی کل سفارش</div></div>
+            <div class="kpi emphasis"><div class="label">بودجه نهایی باندلینگ سفارش شتابی</div><div class="value" id="remainingMargin">۴۵</div><div class="sub">پس از کسر سود هدف Cashless و بودجه بازاریابی کل کارتخوان‌ها</div></div>
           </div>
           <div class="rule"></div>
           
@@ -228,7 +228,7 @@ hr{border:0;border-top:1px solid var(--line);margin:15px 0}
 <script>
 const $ = id => document.getElementById(id);
 const ids = ['posBase','posTarget','cashCost','cashPrice','cashProfit','marketingPerPos','speedP','speedC','networkP','networkC'];
-const defaults = {posBase:19,posTarget:15,cashCost:25,cashPrice:42,cashProfit:4,marketingPerPos:2,speedP:5,speedC:5,networkP:10,networkC:2};
+const defaults = {posBase:20,posTarget:15,cashCost:25,cashPrice:40,cashProfit:2,marketingPerPos:2,speedP:10,speedC:5,networkP:5,networkC:2};
 let selectedBundle = null;
 const num = id => Math.max(0, Number($(id).value)||0);
 const fmt = (n,d=1) => Number(n).toLocaleString('fa-IR',{maximumFractionDigits:d,minimumFractionDigits:0});
@@ -260,7 +260,9 @@ function renderManager(){
  setText('grossMargin',money(gross));
  setText('markup',x.cost>0?fmt(x.profit/x.cost*100,2)+'٪':'—');
  setText('targetDiscount',money(Math.max(0,x.base-x.target)));
- setText('remainingMargin',money(gross-x.profit));
+ const orderPos=Math.floor(num('speedP')),orderCash=Math.floor(num('speedC'));
+ const bundlingBudget=orderCash*(x.cashPrice-x.cost-x.profit)-orderPos*x.marketingPerPos;
+ setText('remainingMargin',money(bundlingBudget));
 }
 function renderBundle(prefix,name){
  const r=readBundle(prefix);
